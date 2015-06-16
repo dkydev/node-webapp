@@ -1,5 +1,5 @@
 module.exports.process = function(req, res) {
-
+  
   var mongo = require("mongodb").MongoClient;
   var url = "mongodb://localhost:27017/nwa";
 
@@ -12,10 +12,17 @@ module.exports.process = function(req, res) {
 
       if (err) res.send(JSON.stringify(err, null, 2));
 
-      res.send(JSON.stringify(docs, null, 2));
-      db.close();
+      var fs = require("fs");
+      var ejs = require("ejs");
+
+      fs.readFile("./components/test/views/testview.html", "utf-8", function(err, data) {
+
+        if (err) res.send(JSON.stringify(err, null, 2));
+
+        res.send(ejs.render(data, {title : "Some Title.", users : docs}, null));
+        db.close();
+
+      });
     });
-
   });
-
-}
+};
