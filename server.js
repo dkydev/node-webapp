@@ -1,3 +1,7 @@
+/// <reference path="typings/node/node.d.ts"/>
+/// <reference path="typings/express/express.d.ts" />
+
+
 global.__base = __dirname + '/';
 
 var express = require("express");
