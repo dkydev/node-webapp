@@ -1,0 +1,11 @@
+<table class="table table-bordered">
+  <tbody>
+    <% for (var i in users) { %>
+    <tr>
+      <td><%=users[i].username%></td>
+      <td><%=users[i].email%></td>
+      <td><%=users[i].about%></td>
+    </tr>
+    <% } %>
+  </tbody>
+</table>

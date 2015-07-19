@@ -1,30 +1,46 @@
-/// <reference path="typings/node/node.d.ts"/>
-/// <reference path="typings/express/express.d.ts" />
-
-
 global.__base = __dirname + '/';
 
 var express = require("express");
+var bodyParser = require("body-parser");
+var session = require("express-session")
 var app = express();
 
 app.use(express.static("www"));
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(session({
+  secret: "banana",
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false }
+}));
 
-app.get(["/", "/home"], function(req, res) {
-  res.send("HOME");
-});
-
-app.get(["/:component", "/:component/:action"], function(req, res) {
+var handleHomeRequest = function(req, res) {
   try {
-    var component = require("./components/" + req.params.component + "/controller.js");
+    var component = require("./components/com_default/controller.js");
     component.process(req, res);
   } catch (e) {
     res.send(require('util').inspect(e));
     console.log(e);
   }
-});
+};
+
+var handleComponentRequest = function(req, res) {
+  try {
+    var component = require("./components/com_" + req.params.component + "/controller.js");
+    component.process(req, res);
+  } catch (e) {
+    res.send(require('util').inspect(e));
+    console.log(e);
+  }
+};
+
+app.get(["/:component", "/:component/:action"], handleComponentRequest);
+app.post(["/:component", "/:component/:action"], handleComponentRequest);
+
+app.get(["/", "/home"], handleHomeRequest);
+app.post(["/", "/home"], handleHomeRequest);
 
 var server = app.listen(8080, function () {
-
   var host = server.address().address;
   var port = server.address().port;
 
