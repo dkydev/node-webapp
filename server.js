@@ -14,17 +14,11 @@ app.use(session({
   cookie: { secure: false }
 }));
 
-var handleHomeRequest = function(req, res) {
-  try {
-    var component = require("./components/com_default/controller.js");
-    component.process(req, res);
-  } catch (e) {
-    res.send(require('util').inspect(e));
-    console.log(e);
-  }
-};
+process.on('uncaughtException', function(err) {
+  console.log(err);
+});
 
-var handleComponentRequest = function(req, res) {
+var handleRequest = function(req, res) {
   try {
     var component = require("./components/com_" + req.params.component + "/controller.js");
     component.process(req, res);
@@ -34,11 +28,12 @@ var handleComponentRequest = function(req, res) {
   }
 };
 
-app.get(["/:component", "/:component/:action"], handleComponentRequest);
-app.post(["/:component", "/:component/:action"], handleComponentRequest);
+app.get(["/:component", "/:component/:action"], handleRequest);
+app.post(["/:component", "/:component/:action"], handleRequest);
 
-app.get(["/", "/home"], handleHomeRequest);
-app.post(["/", "/home"], handleHomeRequest);
+app.get(["/", "/home"], function (req, res) {
+  res.send("We're home!");
+});
 
 var server = app.listen(8080, function () {
   var host = server.address().address;

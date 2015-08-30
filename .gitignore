@@ -1,3 +1,8 @@
 data/
 node_modules/
 npm-debug.log
+.project
+.externalToolBuilders
+.settings
+typings/
+tsd.json

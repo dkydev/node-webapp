@@ -1,0 +1,45 @@
+<% if (deleteURL) { %><form id="the_form" method="POST" action="<%=deleteURL%>"> <% } %>
+  <div style="margin-bottom:5px;">
+    <% if (addURL) { %>
+      <a href="<%=addURL%>" class="btn btn-primary pull-right">Add</a>
+    <% } %>
+    <% if (deleteURL) { %>
+      <input type="submit" class="btn btn-default" value="Delete Selected" />
+    <% } %>
+  </div>
+  <div class="row">
+    <div class="col-md-12">
+      <table class="table table-bordered">
+        <thead>
+          <tr>
+            <% if (deleteURL) { %><th></th><% } %>
+            <% for (var i in columns) { %>
+              <th><%=columns[i].label%></th>
+            <% } %>
+            <% if (deleteURL || editURL) { %><th>Action</th><% } %>
+          </tr>
+        </thead>
+        <tbody>
+          <% for (var i in items) { %>
+            <tr>
+              <% if (addURL) { %><td><input type="checkbox" name="delete[]" value="<%=items[i]._id%>" /></td><% } %>
+              <% for (var j in columns) { %>
+                <td><%=items[i][columns[j].name]%></td>
+              <% } %>
+              <% if (deleteURL || editURL) { %>
+                <th>
+                  <% if (editURL) { %>
+                    <a href="<%=editURL%>?id=<%=items[i]._id%>" class="btn btn-xs btn-primary">Edit</a>
+                  <% } %>
+                  <% if (deleteURL) { %>
+                    <a href="<%=deleteURL%>?id=<%=items[i]._id%>" class="btn btn-xs btn-danger">Delete</a>
+                  <% } %>
+                </th>
+              <% } %>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% if (deleteURL) { %></form><% } %>

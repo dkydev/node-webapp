@@ -1,6 +1,1 @@
-{
-  "execMap": {
-    "js": "node"
-  },
-  "script": "server.js",
-}
+{"execMap": {"js": "node"},"script":"server.js"}

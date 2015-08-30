@@ -1,149 +1,122 @@
+var moment = require('moment');
 var db = require(__base + "lib/db");
 var view = require(__base + "lib/view");
 var output = require(__base + "lib/output");
+var daUser = require(__base + "components/com_user/da");
 
 module.exports.process = function(req, res) {
 
-  var collection = "users";
+  var action = req.params.action || "list";
 
-  var columns = [
+  return actions[action](req, res);
+
+};
+
+var action_list = function(req, res) {
+
+  var data = {};
+  data.title = "List Users";
+  data.columns = [
     { label : "Username", name : "username" },
     { label : "Email", name : "email" },
     { label : "About", name : "about" },
-    { label : "Date Joined", name : "created_ts" },
+    { label : "Joined", name : "joined" },
   ];
+  data.addURL = "";
+  data.editURL = "";
+  data.deleteURL = "";
+  daUser.getUsers(function(users) {
 
-  var fields = [
-    {
-      label : "Username",
-      name : "username",
-      type : "text",
-      required : true
-    },
-    {
-      label : "Email",
-      name : "email",
-      type : "email",
-      required : true
-    },
-    {
-      label : "Password",
-      name : "password",
-      type : "password",
-      required : true,
-      save : function(value) { return require("md5")(value); }
-    },
-    {
-      label : "About",
-      name : "about",
-      type : "textarea"
+    data.users = users;
+    data.users.map(function(user) {
+      user.joined = moment(user.created_ts * 1000).fromNow();
+    });
+
+    // Get client message and unset in session.
+    if (req.session.message) {
+      data.message = req.session.message;
+      req.session.message = null;
     }
-  ];
 
-  var actionMap = {
-    "list" : function(req, res) {
-      db.find(collection, null, function(items) {
-        data = {
-          template :  __base + "components/com_default/views/list.html",
-          title : "List Users",
-          columns : columns,
-          items : items,
-          addButton : "/user/add",
-          deleteButton : "/user/delete",
-          editButton : "/user/edit"
-        };
-        output.render(req, res, data);
-      });
-    },
-    "add" : function(req, res) {
-      var data = {
-        template :  __base + "components/com_default/views/form.html",
-        title : "Add User",
-        action : "/user/insert",
-        fields : fields,
-        item : null,
-        cancelButton : "/user/list"
-      };
-      output.render(req, res, data);
-    },
-    "edit" : function(req, res) {
-      if (req.query.id) {
-        db.findOne(collection, null, function(item) {
-          for (var i in fields) {
-            fields[i].value = item[fields[i].name];
-          }
-          var data = {
-            template :  __base + "components/com_default/views/form.html",
-            title : "Edit User",
-            action : "/user/update",
-            fields : fields,
-            item : item,
-            cancelButton : "/user/list"
-          };
-          output.render(req, res, data);
-        });
-      } else {
-        res.redirect("/user/list");
-      }
-    },
-    "insert" : function(req, res) {
-        // Validate
-        var item = {};
-        for (var i in fields) {
-          if (fields[i].save) {
-            item[fields[i].name] = fields[i].save(req.body[fields[i].name]);
-          } else {
-            item[fields[i].name] = req.body[fields[i].name];
-          }
-          item.created_ts = Math.floor(new Date() / 1000);
-        }
-        db.insert(collection, item, function(result) {
-          req.session.message = {type : "success", text : "User added successfully."};
-          res.redirect("/user/list");
-        });
-    },
-    "update" : function(req, res) {
-      // Validate
-      if (req.body.id) {
-        var set = {};
-        for (var i in fields) {
-          if (fields[i].save) {
-            set[fields[i].name] = fields[i].save(req.body[fields[i].name]);
-          } else {
-            set[fields[i].name] = req.body[fields[i].name];
-          }
-        }
-        db.update(collection, {_id : require("mongodb").ObjectID(req.body.id)}, {$set : set}, function(result) {
-          req.session.message = {type : "success", text : "User updated successfully."};
-          res.redirect("/user/list");
-        });
-      } else {
-        res.redirect("/user/list");
-      }
-    },
-    "delete" : function(req, res) {
-      if (req.body.delete) { // Delete many.
-        var idList = req.body.delete.map(function(id) { return require("mongodb").ObjectID(id); });
-        db.remove(collection, {_id : { $in : idList }}, function(response) {
-          if (response.result.n > 0) {
-            req.session.message = {type : "success", text : response.result.n + " user" + (response.result.n > 1 ? "s" : "") + " deleted successfully."};
-          } else {
-            req.session.message = {type : "info", text : "Nothing selected."};
-          }
-          res.redirect("/user/list");
-        });
-      } else if (req.query.id) { // Delete one.
-        var id = require("mongodb").ObjectID(req.query.id);
-        db.remove(collection, {_id : id}, function(response) {
-          req.session.message = {type : "success", text : "User deleted successfully."};
-          res.redirect("/user/list");
-        });
-      } else {
-        req.session.message = {type : "info", text : "Nothing selected."};
-        res.redirect("/user/list");
-      }
-    },
-  };
-  var action = req.params.action || "list";
-  return actionMap[action](req, res);
+    output.render("user/list.html", data, function(html) {
+        res.send(html);
+    });
+
+  });
+
+}
+
+var action_add = function(req, res) {
+
+  var data = {};
+  data.title = "Add User";
+  data.action = "/user/insert";
+
+  output.render("user/edit.html", data, function(html) {
+    res.send(html);
+  });
+
+}
+
+var action_edit = function(req, res) {
+
+  var id = req.query.id;
+
+  if (!id) {
+    res.redirect("/user/list");
+    return;
+  }
+
+  var data = {};
+  data.title = "Edit User";
+  data.action = "/user/update";
+
+  daUser.getUser(id, function(user) {
+
+    data.user = user;
+
+    output.render("user/edit.html", data, function(html) {
+        res.send(html);
+    });
+
+  });
+
+}
+
+var action_insert = function(req, res) {
+
+  var user = daUser.prepareUser(req.body);
+
+  var result = daUser.validateUser(user);
+  if (!result.isValid) {
+    req.session.validation = result;
+    req.session.message = {type : "success", text : result.message };
+  }
+
+  daUser.insertUser(user, function(result) {
+    if (result) {
+      req.session.message = {type : "success", text : "User added successfully."};
+    } else {
+
+    }
+  });
+
+  res.redirect("/user/list");
+}
+
+var action_update = function(req, res) {
+  res.redirect("/user/list");
+}
+
+var action_delete = function(req, res) {
+  res.redirect("/user/list");
+}
+
+var actions = {
+  "list" : action_list,
+  "add" : action_add,
+  "edit" : action_edit,
+  "update" : action_update,
+  "delete" : action_delete,
+  "insert" : action_insert,
 };
