@@ -1,85 +1,106 @@
-var moment = require('moment');
+var moment = require("moment");
 var db = require(__base + "lib/db");
 
-module.exports.deleteUser = function(user, callback) {
+module.exports.deleteUser = function(_id, callback) {
+
+  db.remove("users", { _id : db.id(_id) }, function (error, result) {
+    if (error) { callback(error); return; }
+    callback(null, result);
+  });
 
 };
 
 module.exports.insertUser = function(user, callback) {
 
+  user = this.prepareUser(user);
+  user.created_ts = moment().unix();
+
   // Encrypt password.
   user.password = require("md5")(user.password);
 
-  db.insert("users", user, callback);
+  db.insert("users", user, function (error, result) {
+    if (error) { callback(error); return; }
+    callback(null, result);
+  });
 
 };
 
 module.exports.updateUser = function(user, callback) {
 
+  var id = user._id;
+  user = this.prepareUser(user);
+
+  // Update user.
+
 };
 
 module.exports.getUsers = function(callback) {
 
-  db.find("users", null, callback);
+  db.find("users", null, function(error, users) {
+    if (error) { callback(error); return; }
+    users.map(function(user) {
+      user.joined = moment(user.created_ts * 1000).fromNow();
+    });
+    callback(null, users);
+  });
 
 };
 
-module.exports.getUser = function(userId, callback) {
+module.exports.getUser = function(_id, callback) {
 
-  db.findOne("users", {_id : db.id(userId)}, callback);
+  db.findOne("users", {_id : db.id(_id)}, function(error, user) {
+    if (error) { callback(error); return; }
+    user.password = "";
+    callback(null, user);
+  });
 
 };
 
 module.exports.prepareUser = function(obj) {
 
-  for (var i in this.fields) {
-    if (this.fields[i].save) {
-      if (typeof(this..fields[i].save) === "function") {
-        user[this.fields[i].name] = this.fields[i].save(req.body[this..fields[i].name]);
-      } else {
-        user[this.fields[i].name] = req.body[this.fields[i].name];
-      }
-    }
-    user.created_ts = Math.floor(new Date() / 1000);
-  }
+  var user = {};
 
+  user.username = obj.username;
+  user.email = obj.email;
+  user.password = obj.password;
+  user.about = obj.about;
+
+  return user;
+
+}
+
+module.exports.getEmptyUser = function() {
+  return {
+    "_id" : "",
+    "username" : "",
+    "email" : "",
+    "password" : "",
+    "confirm_password" : "",
+    "about" : "",
+  };
 }
 
 module.exports.validateUser = function(user) {
 
-}
+  var result = { isValid : true, error : {} };
 
-module.exports.fields = [
-  {
-    label : "Username",
-    name : "username",
-    type : "text",
-    validation : {
-      required : true,
-    },
-  },
-  {
-    label : "Email",
-    name : "email",
-    type : "email",
-  },
-  {
-    label : "Password",
-    name : "password",
-    type : "password",
-    validation : function (value, formData) {
-      return value == formData.confirm_password;
-    }
-  },
-  {
-    label : "Confirm Password",
-    name : "confirm_password",
-    type : "password",
-    validation : "confirm_password",
-  },
-  {
-    label : "About",
-    name : "about",
-    type : "textarea",
+  if (!user.username || user.username.length < 3) {
+    result.error.username = "Username too short. Minimum 3 characters.";
+    result.isValid = false;
   }
-];
+  if (!user.email || user.email.length < 1) {
+    result.error.email = "Please enter a valid email address.";
+    result.isValid = false;
+  }
+  if (!user.password || user.password.length < 6) {
+    result.error.password = "Password too short. Minimum 6 characters.";
+    result.isValid = false;
+  }
+  if (user.password != user.confirm_password) {
+    result.error.confirm_password = "Password and confirm password do not match.";
+    result.isValid = false;
+  }
+
+  return result;
+
+}

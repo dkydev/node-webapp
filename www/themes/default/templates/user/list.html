@@ -1,49 +1,59 @@
-<form id="the_form" method="POST" action="<%=deleteURL%>">
-  <div style="margin-bottom:5px;">
-      <a href="/user/add" class="btn btn-primary pull-right">Add</a>
-      <input type="submit" class="btn btn-default" value="Delete Selected" />
-  </div>
-  <div class="row">
-    <div class="col-md-12">
-      <table class="table table-bordered">
-        <thead>
+<h1><%=title%></h1>
+<% if (typeof message != "undefined") { %>
+  <div class="alert alert-<%=message.type%>"><%=message.text%></div>
+<% } %>
+<div class="row">
+  <div class="col-md-12">
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th><input id="checkbox_toggle" type="checkbox" onclick="toggleCheckboxes()" /></th>
+          <th>Username</th>
+          <th>Email</th>
+          <th>About</th>
+          <th>Joined</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% for (var i in users) { %>
           <tr>
-            <th><input id="checkbox_toggle" type="checkbox" onclick="toggleCheckboxes()" /></th>
-            <th>Username</th>
-            <th>Email</th>
-            <th>About</th>
-            <th>Joined</th>
-            <th>Action</th>
+            <td><input type="checkbox" name="delete[]" value="<%=users[i]._id%>" /></td>
+            <td><%=users[i].username%></td>
+            <td><%=users[i].email%></td>
+            <td><%=users[i].about%></td>
+            <td><%=users[i].joined%></td>
+            <th>
+                <a href="/user/edit?_id=<%=users[i]._id%>" class="btn btn-xs btn-primary">Edit</a>
+                <a href="/user/delete?_id=<%=users[i]._id%>" class="btn btn-xs btn-danger">Delete</a>
+            </th>
           </tr>
-        </thead>
-        <tbody>
-          <% for (var i in users) { %>
-            <tr>
-              <td><input type="checkbox" name="delete[]" value="<%=users[i]._id%>" /></td>
-              <td><%=users[i].username%></td>
-              <td><%=users[i].email%></td>
-              <td><%=users[i].about%></td>
-              <td><%=users[i].joined%></td>
-              <th>
-                  <a href="/user/edit?id=<%=users[i]._id%>" class="btn btn-xs btn-primary">Edit</a>
-                  <a href="/user/delete?id=<%=users[i]._id%>" class="btn btn-xs btn-danger">Delete</a>
-              </th>
-            </tr>
-          <% } %>
-        </tbody>
-      </table>
-    </div>
+        <% } %>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="6">
+            <a href="/user/add" class="btn btn-primary pull-right">Add User</a>
+            <button type="button" class="btn btn-default" onclick="deleteSelected()">Delete Selected</button>
+          </td>
+        </tr>
+      </tfoot>
+    </table>
   </div>
-</form>
+</div>
 
 <script type="text/javascript">
 
+function deleteSelected() {
+
+}
+
 function toggleCheckboxes() {
-  $("#the_form input[type='checkbox']").prop("checked", $("#checkbox_toggle").prop("checked"));
+  $("input[type='checkbox']").prop("checked", $("#checkbox_toggle").prop("checked"));
 }
 
 $(document).ready(function() {
-  $("#the_form input[type='checkbox']").click(function(e) { e.stopPropagation(); }).parent().click(function(e) {
+  $("input[type='checkbox']").click(function(e) { e.stopPropagation(); }).parent().click(function(e) {
     e.stopPropagation();
     $(this).find("input[type='checkbox']").click();
   });

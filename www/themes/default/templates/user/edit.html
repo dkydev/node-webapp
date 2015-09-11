@@ -1,28 +1,44 @@
+<h1><%=title%></h1>
+<% if (message) { %>
+  <div class="alert alert-<%=message.type%>"><%=message.text%></div>
+<% } %>
 <form id="the_form" method="POST" action="<%=action%>">
 
-  <% if (typeof user !== "undefined" && user._id) { %>
-  <input type="hidden" name="id" value="<%=user._id%>" />
+  <% if (user._id) { %>
+  <input type="hidden" name="_id" value="<%=user._id%>" />
   <% } %>
 
-  <div class="form-group">
-    <label for="form_username">Username</label>
-    <input class="form-control" type="text" name="username" placeholder="Username" value="<%= typeof(user) !== 'undefined' ? user.username : '' %>" />
+  <div class="form-group<%= validation && validation.error.username ? ' has-error' : '' %>">
+    <label class="control-label" for="form_username">Username</label>
+    <input class="form-control" type="text" name="username" placeholder="Username" value="<%=user.username%>" />
+    <% if (validation) { %>
+    <span class='help-block'><%=validation.error.username%></span>
+    <% } %>
+  </div>
+  <div class="form-group<%= validation && validation.error.email ? ' has-error' : '' %>">
+    <label class="control-label" for="form_email">Email</label>
+    <input id="form_email" class="form-control" type="email" name="email" placeholder="Email" value="<%=user.email%>" />
+    <% if (validation) { %>
+    <span class='help-block'><%=validation.error.email%></span>
+    <% } %>
+  </div>
+  <div class="form-group<%= validation && validation.error.password ? ' has-error' : '' %>">
+    <label class="control-label" for="form_password">Password</label>
+    <input class="form-control" type="password" name="password" placeholder="Password" value="<%=user.password%>" />
+    <% if (validation) { %>
+    <span class='help-block'><%=validation.error.password%></span>
+    <% } %>
+  </div>
+  <div class="form-group<%=validation && validation.error.confirm_password ? ' has-error' : '' %>">
+    <label class="control-label" for="form_confirm_password">Confirm Password</label>
+    <input class="form-control" type="password" name="confirm_password" placeholder="Confirm Password" value="<%=user.confirm_password%>" />
+    <% if (validation) { %>
+    <span class='help-block'><%=validation.error.confirm_password%></span>
+    <% } %>
   </div>
   <div class="form-group">
-    <label for="form_email">Email</label>
-    <input id="form_email" class="form-control" type="email" name="email" placeholder="Email" value="<%= typeof(user) !== 'undefined' ? user.email : '' %>" />
-  </div>
-  <div class="form-group">
-    <label for="form_password">Password</label>
-    <input class="form-control" type="password" name="password" placeholder="Password" value="" />
-  </div>
-  <div class="form-group">
-    <label for="form_confirm_password">Confirm Password</label>
-    <input class="form-control" type="password" name="confirm_password" placeholder="Confirm Password" value="" />
-  </div>
-  <div class="form-group">
-    <label for="form_about">About</label>
-    <textarea class="form-control" name="about" placeholder="About"><%= typeof(user) !== 'undefined' ? user.about : '' %></textarea>
+    <label class="control-label" for="form_about">About</label>
+    <textarea class="form-control" name="about" placeholder="About"><%=user.about%></textarea>
   </div>
 
   <button type="submit" class="btn btn-primary">Submit</button>
