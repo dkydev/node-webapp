@@ -27,10 +27,13 @@ module.exports.insertUser = function(user, callback) {
 
 module.exports.updateUser = function(user, callback) {
 
-  var id = user._id;
+  var _id = user._id;
   user = this.prepareUser(user);
 
-  // Update user.
+  db.update("users", { _id : db.id(_id) }, user, function (error, result) {
+    if (error) { callback(error); return; }
+    callback(null, result);
+  });
 
 };
 
@@ -48,7 +51,7 @@ module.exports.getUsers = function(callback) {
 
 module.exports.getUser = function(_id, callback) {
 
-  db.findOne("users", {_id : db.id(_id)}, function(error, user) {
+  db.findOne("users", { _id : db.id(_id) }, function(error, user) {
     if (error) { callback(error); return; }
     user.password = "";
     callback(null, user);
@@ -80,27 +83,48 @@ module.exports.getEmptyUser = function() {
   };
 }
 
-module.exports.validateUser = function(user) {
+module.exports.validateUser = function(user, callback) {
 
-  var result = { isValid : true, error : {} };
+  var result = { isValid : true, message : {} };
+
+  // Sub validation function to account for async db validation.
+  var validateMore = function(user, result) {
+
+    if (!user.email || user.email.length < 1) {
+      result.message.email = { type : "error", text: "Please enter a valid email address." };
+      result.isValid = false;
+    }
+    if (!user.password || user.password.length < 6) {
+      result.message.password = { type : "error", text: "Password too short. Minimum 6 characters." };
+      result.isValid = false;
+    }
+    if (user.password != user.confirm_password) {
+      result.message.confirm_password = { type : "error", text: "Password and confirm password do not match." };
+      result.isValid = false;
+    }
+
+    return result;
+  }
 
   if (!user.username || user.username.length < 3) {
-    result.error.username = "Username too short. Minimum 3 characters.";
-    result.isValid = false;
-  }
-  if (!user.email || user.email.length < 1) {
-    result.error.email = "Please enter a valid email address.";
-    result.isValid = false;
-  }
-  if (!user.password || user.password.length < 6) {
-    result.error.password = "Password too short. Minimum 6 characters.";
-    result.isValid = false;
-  }
-  if (user.password != user.confirm_password) {
-    result.error.confirm_password = "Password and confirm password do not match.";
-    result.isValid = false;
-  }
 
-  return result;
+    result.message.username = { type : "error", text: "Username too short. Minimum 3 characters." };
+    result.isValid = false;
 
+    result = validateMore(user, result);
+    callback(null, result);
+
+  } else {
+
+    // Unique username.
+    db.findOne("users", { username : user.username }, function(error, res) {
+      if (error) { callback(error); return; }
+      if (res) {
+        result.message.username = { type : "error", text: "Username is not unique. Please try another username." };
+        result.isValid = false;
+      }
+      result = validateMore(user, result);
+      callback(null, result);
+    });
+  }
 }

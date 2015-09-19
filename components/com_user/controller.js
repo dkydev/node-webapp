@@ -5,39 +5,38 @@ var daUser = require(__base + "components/com_user/da");
 
 module.exports.process = function(req) {
 
-  var action = req.params.action || "list";
-
-  return {
-    "list" : action_list,
-    "add" : action_add,
-    "edit" : action_edit,
-    "update" : action_update,
-    "delete" : action_delete,
-    "insert" : action_insert,
-  }[action](req);
+  var action = req.params.action || this.defaultAction;
+  return this.actions[action](req);
 
 };
 
-var action_list = function(req) {
+module.exports.defaultAction = "list";
+module.exports.actions = {};
+var actions = module.exports.actions;
+
+module.exports.actions.list = function(req) {
 
   var data = {};
   data.title = "List Users";
   daUser.getUsers(function(error, users) {
 
-    if (error) {
-      req.send(require("util").inspect(error)); return;
-    }
+    if (error) { req.send(require("util").inspect(error)); return; }
 
     data.users = users;
-    data.message = req.getMessage(req);
 
-    req.send(output.render("user/list.html", data));
+    var outputHandler = output.getOutputHandler(req);
+    var html = outputHandler.include("master.html", {
+      title : data.title,
+      message : req.getMessage(req),
+      content : outputHandler.include("user/list.html", data)
+    });
+
+    req.send(html);
 
   });
+};
 
-}
-
-var action_add = function(req) {
+module.exports.actions.add = function(req) {
 
   var data = {};
   data.title = "Add User";
@@ -51,13 +50,18 @@ var action_add = function(req) {
     data.user = daUser.getEmptyUser();
   }
 
-  data.message = req.getMessage(req);
+  var outputHandler = output.getOutputHandler(req);
+  var html = outputHandler.include("master.html", {
+    title : data.title,
+    message : req.getMessage(req),
+    content : outputHandler.include("user/edit.html", data)
+  });
 
-  req.send(output.render("user/edit.html", data));
+  req.send(html);
 
-}
+};
 
-var action_edit = function(req) {
+module.exports.actions.edit = function(req) {
 
   var _id = req.query._id;
 
@@ -69,73 +73,116 @@ var action_edit = function(req) {
   var data = {};
   data.title = "Edit User";
   data.action = "/user/update";
-  data.validation = false;
 
-  data.message = req.getMessage();
+  var outputHandler = output.getOutputHandler(req);
 
-  daUser.getUser(_id, function(error, user) {
+  if (req.validation) {
 
-    if (error) {
-      req.send(require("util").inspect(error)); return;
-    }
+    data.validation = req.validation;
+    data.user = req.user;
 
-    data.user = user;
-    req.send(output.render("user/edit.html", data));
+    var html = outputHandler.include("master.html", {
+      title : data.title,
+      message : req.getMessage(req),
+      content : outputHandler.include("user/edit.html", data)
+    });
 
-  });
-}
+    req.send(html);
 
-var action_insert = function(req) {
+  } else {
+
+    data.validation = false;
+    data.user = daUser.getEmptyUser();
+    daUser.getUser(_id, function(error, user) {
+
+      if (error) { req.send(require("util").inspect(error)); return; }
+
+      data.user = user;
+
+      var html = outputHandler.include("master.html", {
+        title : data.title,
+        message : req.getMessage(req),
+        content : outputHandler.include("user/edit.html", data)
+      });
+
+      req.send(html);
+
+    });
+
+  }
+};
+
+module.exports.actions.insert = function(req) {
 
   var user = req.body;
 
-  var result = daUser.validateUser(user);
+  daUser.validateUser(user, function (error, result) {
 
-  if (!result.isValid) {
-    req.validation = result;
-    req.user = user;
-    req.session.message = {type : "danger", text : "User not added, please fix the specified errors and try again." };
-    action_add(req);
-    return;
-  }
+    if (error) { req.send(require("util").inspect(error)); return; }
 
-  daUser.insertUser(user, function(error, result) {
-
-    if (error) {
-      req.send(require("util").inspect(error)); return;
+    if (!result.isValid) {
+      req.validation = result;
+      req.user = user;
+      req.session.message = { type : "danger", text : "User NOT added, please fix the specified errors and try again." };
+      actions.add(req);
+      return;
     }
 
-    req.session.message = {type : "success", text : "User added successfully."};
+    daUser.insertUser(user, function(error, result) {
 
+      if (error) { req.send(require("util").inspect(error)); return; }
+
+      if (result.result.ok && result.result.n > 0) {
+        req.session.message = { type : "success", text : "User added successfully." };
+      } else {
+        req.session.message = { type : "danger", text : "User NOT added." };
+      }
+
+      req.redirect("/user/list");
+
+    });
+  });
+};
+
+module.exports.actions.update = function(req) {
+
+  var user = req.body;
+
+  if (!user._id) {
     req.redirect("/user/list");
-
-  });
-}
-
-var action_update = function(req) {
-
-  var user = req.body;
-
-  var result = daUser.validateUser(user);
-  if (!result.isValid) {
-    req.validation = result;
-    req.user = user;
-    req.session.message = {type : "danger", text : "User not added, please fix the specified errors and try again." };
-    action_edit(req);
     return;
   }
 
-  user = daUser.prepareUser(user);
+  daUser.validateUser(user, function(error, result) {
 
-  // TODO: Actually update the user.
+    if (error) { req.send(require("util").inspect(error)); return; }
 
-  req.session.message = {type : "success", text : "User updated successfully."};
+    if (!result.isValid) {
+      req.validation = result;
+      req.user = user;
+      req.query._id = user._id;
+      req.session.message = { type : "danger", text : "User NOT updated, please fix the specified errors and try again." };
+      actions.edit(req);
+      return;
+    }
 
-  req.redirect("/user/list");
+    daUser.updateUser(user, function(error, result) {
 
-}
+        if (error) { req.send(require("util").inspect(error)); return; }
 
-var action_delete = function(req) {
+        if (result.result.ok && result.result.n > 0) {
+          req.session.message = { type : "success", text : "User updated successfully." };
+        } else {
+          req.session.message = { type : "danger", text : "User NOT updated." };
+        }
+
+        req.redirect("/user/list");
+
+    });
+  });
+};
+
+module.exports.actions.delete = function(req) {
 
   var _id = req.query._id;
 
@@ -146,24 +193,23 @@ var action_delete = function(req) {
 
   daUser.deleteUser(_id, function(error, result) {
 
-    if (error) {
-      req.send(require("util").inspect(error)); return;
-    }
+    if (error) { req.send(require("util").inspect(error)); return; }
 
     if (result.result.ok && result.result.n > 0) {
-      req.session.message = {type : "success", text : "User deleted successfully."};
+      req.session.message = { type : "success", text : "User deleted successfully." };
     } else {
-      req.session.message = {type : "danger", text : "User NOT deleted."};
+      req.session.message = { type : "danger", text : "User NOT deleted." };
     }
 
     req.redirect("/user/list");
 
   });
-}
 
-var action_validate_user = function(req) {
+};
+
+module.exports.actions.validate_user = function(req) {
 
   var user = req.body;
   return daUser.validateUser(user);
 
-}
+};

@@ -19,8 +19,8 @@ app.use(session({
   cookie: { secure: false }
 }));
 
-app.get(["/", "/:component", "/:component/:action"], requestHandler.init);
-app.post(["/", "/:component", "/:component/:action"], requestHandler.init);
+app.get(["/", "/:component", "/:component/:action"], requestHandler.getRequestHandler);
+app.post(["/", "/:component", "/:component/:action"], requestHandler.getRequestHandler);
 
 var server = app.listen(8080, function () {
   var host = server.address().address;

@@ -1,45 +1,42 @@
-<h1><%=title%></h1>
-<% if (typeof message != "undefined") { %>
-  <div class="alert alert-<%=message.type%>"><%=message.text%></div>
-<% } %>
-<div class="row">
-  <div class="col-md-12">
-    <table class="table table-bordered">
-      <thead>
-        <tr>
-          <th><input id="checkbox_toggle" type="checkbox" onclick="toggleCheckboxes()" /></th>
-          <th>Username</th>
-          <th>Email</th>
-          <th>About</th>
-          <th>Joined</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% for (var i in users) { %>
-          <tr>
-            <td><input type="checkbox" name="delete[]" value="<%=users[i]._id%>" /></td>
-            <td><%=users[i].username%></td>
-            <td><%=users[i].email%></td>
-            <td><%=users[i].about%></td>
-            <td><%=users[i].joined%></td>
-            <th>
-                <a href="/user/edit?_id=<%=users[i]._id%>" class="btn btn-xs btn-primary">Edit</a>
-                <a href="/user/delete?_id=<%=users[i]._id%>" class="btn btn-xs btn-danger">Delete</a>
-            </th>
-          </tr>
-        <% } %>
-      </tbody>
-      <tfoot>
-        <tr>
-          <td colspan="6">
-            <a href="/user/add" class="btn btn-primary pull-right">Add User</a>
-            <button type="button" class="btn btn-default" onclick="deleteSelected()">Delete Selected</button>
-          </td>
-        </tr>
-      </tfoot>
-    </table>
+<div class="panel panel-primary">
+  <div class="panel-heading">
+    <h3 class="panel-title"><%-title-%></h3>
   </div>
+  <table class="table table-bordered table-striped">
+    <thead>
+      <tr>
+        <th><input id="checkbox_toggle" type="checkbox" onclick="toggleCheckboxes()" /></th>
+        <th>Username</th>
+        <th>Email</th>
+        <th>About</th>
+        <th>Joined</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% for (var i in users) { %>
+        <tr>
+          <td><input type="checkbox" name="delete[]" value="<%=users[i]._id%>" /></td>
+          <td><%=users[i].username%></td>
+          <td><%=users[i].email%></td>
+          <td><%=users[i].about%></td>
+          <td><%=users[i].joined%></td>
+          <th>
+              <a href="/user/edit?_id=<%=users[i]._id%>" class="btn btn-xs btn-primary">Edit</a>
+              <a href="/user/delete?_id=<%=users[i]._id%>" class="btn btn-xs btn-danger">Delete</a>
+          </th>
+        </tr>
+      <% } %>
+    </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="6">
+          <a href="/user/add" class="btn btn-primary pull-right">Add User</a>
+          <button type="button" class="btn btn-default" onclick="deleteSelected()">Delete Selected</button>
+        </td>
+      </tr>
+    </tfoot>
+  </table>
 </div>
 
 <script type="text/javascript">

@@ -9,7 +9,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
     <link rel="icon" href="/favicon.ico">
-    <title><%=title%></title>
+    <title><%-title-%></title>
     <!-- Bootstrap core CSS -->
     <link href="/themes/default/css/bootstrap.min.css" rel="stylesheet">
 
@@ -24,9 +24,16 @@
   </head>
   <body>
     <div class="container">
+      <% if (message) { %>
+      <div class="row">
+        <div class="alert alert-<%=message.type%>"><%=message.text%></div>
+      </div>
+      <% } %>
       <div class="row">
         <div class="col-md-12">
-          <%- include(bodyTemplate, locals) %>
+          <% if (typeof(content) !== "undefined") { %>
+          <%-content-%>
+          <% } %>
         </div>
       </div>
     </div>

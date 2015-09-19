@@ -1,0 +1,32 @@
+<div class="panel panel-primary">
+  <div class="panel-heading">
+    <h3 class="panel-title"><%-title-%></h3>
+  </div>
+  <div class="panel-body">
+    <form id="the_form" method="POST" action="<%=action%>">
+
+      <%- output.include("input.html", {
+
+        type : "text",
+        label : "Username",
+        name : "username",
+        value : username,
+        message : validation ? validation.message.username : null
+
+      }) -%>
+
+      <%- output.include("input.html", {
+
+        type : "password",
+        label : "Password",
+        name : "password",
+        value : password,
+        message : validation ? validation.message.password : null
+
+      }) -%>
+
+      <button type="submit" class="btn btn-primary">Login</button>
+
+    </form>
+  </div>
+</div>
